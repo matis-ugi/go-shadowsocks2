@@ -1,0 +1,17 @@
+{
+	"Debug":true,
+	"HTTP":":8080",
+	"Client":"",
+	"Server":":8888",
+	"Cipher":"AEAD_CHACHA20_POLY1305",
+	"Key":"",
+	"Password":"password",
+	"Keygen":0,
+	"Socks":"",
+	"RedirTCP":"",
+	"RedirTCP6":"",
+	"TCPTun":"",
+	"UDPTun":"",
+	"UDPTimeout":5,
+	"UDPSocks":false
+}

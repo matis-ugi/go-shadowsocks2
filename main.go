@@ -18,75 +18,52 @@ import (
 	"github.com/shadowsocks/go-shadowsocks2/socks"
 )
 
-var config struct {
-	Verbose    bool
-	UDPTimeout time.Duration
-}
+var (
+	CONFIGS    Configs
+	modTime    time.Time
+	configPath string = "configs.json"
+)
 
 func logf(f string, v ...interface{}) {
-	if config.Verbose {
+	if CONFIGS.Debug {
 		log.Printf(f, v...)
 	}
 }
 
 func main() {
-
-	var flags struct {
-		Client    string
-		Server    string
-		Cipher    string
-		Key       string
-		Password  string
-		Keygen    int
-		Socks     string
-		RedirTCP  string
-		RedirTCP6 string
-		TCPTun    string
-		UDPTun    string
-		UDPSocks  bool
-	}
-
-	flag.BoolVar(&config.Verbose, "verbose", false, "verbose mode")
-	flag.StringVar(&flags.Cipher, "cipher", "AEAD_CHACHA20_POLY1305", "available ciphers: "+strings.Join(core.ListCipher(), " "))
-	flag.StringVar(&flags.Key, "key", "", "base64url-encoded key (derive from password if empty)")
-	flag.IntVar(&flags.Keygen, "keygen", 0, "generate a base64url-encoded random key of given length in byte")
-	flag.StringVar(&flags.Password, "password", "", "password")
-	flag.StringVar(&flags.Server, "s", "", "server listen address or url")
-	flag.StringVar(&flags.Client, "c", "", "client connect address or url")
-	flag.StringVar(&flags.Socks, "socks", "", "(client-only) SOCKS listen address")
-	flag.BoolVar(&flags.UDPSocks, "u", false, "(client-only) Enable UDP support for SOCKS")
-	flag.StringVar(&flags.RedirTCP, "redir", "", "(client-only) redirect TCP from this address")
-	flag.StringVar(&flags.RedirTCP6, "redir6", "", "(client-only) redirect TCP IPv6 from this address")
-	flag.StringVar(&flags.TCPTun, "tcptun", "", "(client-only) TCP tunnel (laddr1=raddr1,laddr2=raddr2,...)")
-	flag.StringVar(&flags.UDPTun, "udptun", "", "(client-only) UDP tunnel (laddr1=raddr1,laddr2=raddr2,...)")
-	flag.DurationVar(&config.UDPTimeout, "udptimeout", 5*time.Minute, "UDP tunnel timeout")
+	flag.StringVar(&configPath, "c", "configs.json", " confis json file path")
 	flag.Parse()
-
-	if flags.Keygen > 0 {
-		key := make([]byte, flags.Keygen)
+	var err error
+	CONFIGS, err = LoadConfigFile(configPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	//go ConfigWatcher()
+	if CONFIGS.Keygen > 0 {
+		key := make([]byte, CONFIGS.Keygen)
 		io.ReadFull(rand.Reader, key)
 		fmt.Println(base64.URLEncoding.EncodeToString(key))
 		return
 	}
 
-	if flags.Client == "" && flags.Server == "" {
+	if CONFIGS.Client == "" && CONFIGS.Server == "" {
 		flag.Usage()
 		return
 	}
 
 	var key []byte
-	if flags.Key != "" {
-		k, err := base64.URLEncoding.DecodeString(flags.Key)
+	if CONFIGS.Key != "" {
+		k, err := base64.URLEncoding.DecodeString(CONFIGS.Key)
 		if err != nil {
 			log.Fatal(err)
 		}
 		key = k
 	}
 
-	if flags.Client != "" { // client mode
-		addr := flags.Client
-		cipher := flags.Cipher
-		password := flags.Password
+	if CONFIGS.Client != "" { // client mode
+		addr := CONFIGS.Client
+		cipher := CONFIGS.Cipher
+		password := CONFIGS.Password
 		var err error
 
 		if strings.HasPrefix(addr, "ss://") {
@@ -101,41 +78,41 @@ func main() {
 			log.Fatal(err)
 		}
 
-		if flags.UDPTun != "" {
-			for _, tun := range strings.Split(flags.UDPTun, ",") {
+		if CONFIGS.UDPTun != "" {
+			for _, tun := range strings.Split(CONFIGS.UDPTun, ",") {
 				p := strings.Split(tun, "=")
 				go udpLocal(p[0], addr, p[1], ciph.PacketConn)
 			}
 		}
 
-		if flags.TCPTun != "" {
-			for _, tun := range strings.Split(flags.TCPTun, ",") {
+		if CONFIGS.TCPTun != "" {
+			for _, tun := range strings.Split(CONFIGS.TCPTun, ",") {
 				p := strings.Split(tun, "=")
 				go tcpTun(p[0], addr, p[1], ciph.StreamConn)
 			}
 		}
 
-		if flags.Socks != "" {
-			socks.UDPEnabled = flags.UDPSocks
-			go socksLocal(flags.Socks, addr, ciph.StreamConn)
-			if flags.UDPSocks {
-				go udpSocksLocal(flags.Socks, addr, ciph.PacketConn)
+		if CONFIGS.Socks != "" {
+			socks.UDPEnabled = CONFIGS.UDPSocks
+			go socksLocal(CONFIGS.Socks, addr, ciph.StreamConn)
+			if CONFIGS.UDPSocks {
+				go udpSocksLocal(CONFIGS.Socks, addr, ciph.PacketConn)
 			}
 		}
 
-		if flags.RedirTCP != "" {
-			go redirLocal(flags.RedirTCP, addr, ciph.StreamConn)
+		if CONFIGS.RedirTCP != "" {
+			go redirLocal(CONFIGS.RedirTCP, addr, ciph.StreamConn)
 		}
 
-		if flags.RedirTCP6 != "" {
-			go redir6Local(flags.RedirTCP6, addr, ciph.StreamConn)
+		if CONFIGS.RedirTCP6 != "" {
+			go redir6Local(CONFIGS.RedirTCP6, addr, ciph.StreamConn)
 		}
 	}
 
-	if flags.Server != "" { // server mode
-		addr := flags.Server
-		cipher := flags.Cipher
-		password := flags.Password
+	if CONFIGS.Server != "" { // server mode
+		addr := CONFIGS.Server
+		cipher := CONFIGS.Cipher
+		password := CONFIGS.Password
 		var err error
 
 		if strings.HasPrefix(addr, "ss://") {
