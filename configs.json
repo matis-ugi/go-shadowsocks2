@@ -1,6 +1,7 @@
 {
 	"Debug":true,
 	"HTTP":":8080",
+	"Record":"0 * * * * *",
 	"Client":"",
 	"Server":":8888",
 	"Cipher":"AEAD_CHACHA20_POLY1305",
@@ -13,5 +14,15 @@
 	"TCPTun":"",
 	"UDPTun":"",
 	"UDPTimeout":5,
-	"UDPSocks":false
+	"UDPSocks":false,
+	"UserList":[
+		{"Account":"admin","Password":"password","Role":["read","write"]},
+		{"Account":"user","Password":"password","Role":["read"]}
+	],
+	"DB":{
+		"Address":"127.0.0.1:27017",
+		"DBName":"browser",
+		"User":"",
+		"Password":""
+	}
 }

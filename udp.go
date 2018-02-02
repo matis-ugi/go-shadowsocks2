@@ -145,7 +145,6 @@ func udpRemote(addr string, shadow func(net.PacketConn) net.PacketConn) {
 			logf("failed to split target address from packet: %q", buf[:n])
 			continue
 		}
-
 		tgtUDPAddr, err := net.ResolveUDPAddr("udp", tgtAddr.String())
 		if err != nil {
 			logf("failed to resolve target UDP address: %v", err)
@@ -153,7 +152,6 @@ func udpRemote(addr string, shadow func(net.PacketConn) net.PacketConn) {
 		}
 
 		payload := buf[len(tgtAddr):n]
-
 		pc := nm.Get(raddr.String())
 		if pc == nil {
 			pc, err = net.ListenPacket("udp", "")

@@ -22,6 +22,9 @@ var (
 	CONFIGS    Configs
 	modTime    time.Time
 	configPath string = "configs.json"
+	MyIP       string = "127.0.0.1"
+	mongo      *MongoDB
+	TM         *TrafficManager
 )
 
 func logf(f string, v ...interface{}) {
@@ -38,6 +41,19 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	//get local ip
+	tmpIP := getMyIp()
+	fmt.Println("Internal IP:", tmpIP)
+	if len(tmpIP) > 0 {
+		MyIP = tmpIP[0]
+	}
+
+	TM = NewTrafficManager()
+
+	//Start MongoDB
+	mongo = NewMongoDB(CONFIGS.DB.Addr, CONFIGS.DB.DbName, CONFIGS.DB.User, CONFIGS.DB.Pass)
+	mongo.AddServer()
 	//go ConfigWatcher()
 	if CONFIGS.Keygen > 0 {
 		key := make([]byte, CONFIGS.Keygen)
@@ -130,7 +146,7 @@ func main() {
 		go udpRemote(addr, ciph.PacketConn)
 		go tcpRemote(addr, ciph.StreamConn)
 	}
-
+	go WebServer()
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	<-sigCh

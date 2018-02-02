@@ -112,6 +112,8 @@ func tcpRemote(addr string, shadow func(net.Conn) net.Conn) {
 			c = shadow(c)
 
 			tgt, err := socks.ReadAddr(c)
+			//add host to tm
+			TM.Add(tgt.String(), 0, 0, 1)
 			if err != nil {
 				logf("failed to get target address: %v", err)
 				return
@@ -126,7 +128,9 @@ func tcpRemote(addr string, shadow func(net.Conn) net.Conn) {
 			rc.(*net.TCPConn).SetKeepAlive(true)
 
 			logf("proxy %s <-> %s", c.RemoteAddr(), tgt)
-			_, _, err = relay(c, rc)
+			inbound, outbound, err := relay(c, rc)
+			//add statistic data
+			TM.Add(tgt.String(), inbound, outbound, 0)
 			if err != nil {
 				if err, ok := err.(net.Error); ok && err.Timeout() {
 					return // ignore i/o timeout

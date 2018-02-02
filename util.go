@@ -13,6 +13,76 @@ import (
 	"time"
 )
 
+func getMyIp() (ipList []string) {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		os.Stderr.WriteString("Oops: " + err.Error() + "\n")
+		return
+	}
+	var data []string
+	for _, a := range addrs {
+		if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				data = append(data, ipnet.IP.String())
+			}
+		}
+	}
+	return data
+}
+
+func SaveFile(name string, data []byte) error {
+	var file *os.File
+	var err error
+	// Create file
+	if file, err = os.Create(name); err != nil {
+		return err
+	}
+
+	if _, err := file.Write(data); err != nil {
+		log.Println("WriteToStreamFile Error:", err)
+		return err
+	}
+
+	// Sync to disk
+	if err = file.Sync(); err != nil {
+		file.Close()
+		return err
+	}
+
+	file.Close()
+	return nil
+}
+
+func WriteToFile(filename string, data string) error {
+	f, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0777)
+	if err != nil {
+		return err
+	}
+
+	defer f.Close()
+
+	if _, err = f.WriteString(data); err != nil {
+		return err
+	}
+	return nil
+}
+
+func LoadFile(fileName string) (interface{}, error) {
+	file, e := ioutil.ReadFile(fileName)
+	if e != nil {
+		log.Printf("Load file error: %v\n", e)
+		os.Exit(1)
+	}
+
+	var data interface{}
+	err := json.Unmarshal(file, &data)
+	if err != nil {
+		log.Printf("load file error:%v \n", err)
+		return data, err
+	}
+	return data, nil
+}
+
 func LoadConfigFile(fileName string) (Configs, error) {
 	file, e := ioutil.ReadFile(fileName)
 	if e != nil {
