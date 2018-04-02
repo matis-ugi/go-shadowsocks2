@@ -1,11 +1,11 @@
 {
 	"Debug":true,
 	"HTTP":"",
-	"Client":"23.99.122.106:444",
+	"Client":"127.0.0.1:8888",
 	"Server":"",
-	"Cipher":"aes-128-ctr",
+	"Cipher":"AEAD_CHACHA20_POLY1305",
 	"Key":"",
-	"Password":"shadow@518",
+	"Password":"password",
 	"Keygen":0,
 	"Socks":":1080",
 	"RedirTCP":"",
@@ -13,11 +13,5 @@
 	"TCPTun":":8053=8.8.8.8:53,:8054=8.8.4.4:53",
 	"UDPTun":":8053=8.8.8.8:53,:8054=8.8.4.4:53",
 	"UDPTimeout":5,
-	"UDPSocks":false,
-	"DB":{
-                "Address":"127.0.0.1:27017",
-                "DBName":"browser",
-                "User":"",
-                "Password":""
-        }
+	"UDPSocks":false
 }

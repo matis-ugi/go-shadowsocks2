@@ -51,10 +51,6 @@ func main() {
 
 	TM = NewTrafficManager()
 
-	//Start MongoDB
-	mongo = NewMongoDB(CONFIGS.DB.Addr, CONFIGS.DB.DbName, CONFIGS.DB.User, CONFIGS.DB.Pass)
-	mongo.AddServer()
-	//go ConfigWatcher()
 	if CONFIGS.Keygen > 0 {
 		key := make([]byte, CONFIGS.Keygen)
 		io.ReadFull(rand.Reader, key)
@@ -126,6 +122,9 @@ func main() {
 	}
 
 	if CONFIGS.Server != "" { // server mode
+		//Start MongoDB
+		mongo = NewMongoDB(CONFIGS.DB.Addr, CONFIGS.DB.DbName, CONFIGS.DB.User, CONFIGS.DB.Pass)
+		mongo.AddServer()
 		addr := CONFIGS.Server
 		cipher := CONFIGS.Cipher
 		password := CONFIGS.Password
@@ -145,8 +144,9 @@ func main() {
 
 		go udpRemote(addr, ciph.PacketConn)
 		go tcpRemote(addr, ciph.StreamConn)
+		go WebServer()
 	}
-	go WebServer()
+
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	<-sigCh
