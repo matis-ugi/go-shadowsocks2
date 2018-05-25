@@ -13,6 +13,7 @@ import (
 )
 
 var WebRouter *mux.Router
+var userSessions map[string]*UserSession
 
 func WebServer() {
 	WebRouter = mux.NewRouter()
@@ -21,7 +22,7 @@ func WebServer() {
 	WebRouter.HandleFunc("/api/{cmd}", apiHandler)
 	WebRouter.HandleFunc("/api/{cmd}/{host}/{start}/{end}", apiHandler)
 	WebRouter.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir("html/"))))
-
+	userSessions = make(map[string]*UserSession)
 	log.Println("API Service starting.", CONFIGS.HTTP)
 	//WebSocketInit()
 	if (CONFIGS.HTTP) != "" {
@@ -57,6 +58,25 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 				if v.Account == rUser.Account && v.Password == rUser.Password {
 					data.State = "success"
 					data.Token = GenToken(rUser.Account, rUser.Salt)
+					userSession := UserSession{}
+					userSession.User = v
+					userSession.Token = data.Token
+					userSessions[v.Account] = &userSession
+					cookie := &http.Cookie{
+						Name:     "token",
+						Value:    data.Token,
+						Expires:  time.Now().Add(time.Hour),
+						HttpOnly: true,
+					}
+					http.SetCookie(w, cookie)
+					userCookie := &http.Cookie{
+						Name:     "user",
+						Value:    rUser.Account,
+						Expires:  time.Now().Add(time.Hour),
+						HttpOnly: true,
+					}
+					http.SetCookie(w, userCookie)
+					fmt.Printf("set cookie:%v %v\n", cookie, userCookie)
 					break
 				}
 			}

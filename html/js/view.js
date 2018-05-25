@@ -28,19 +28,33 @@ function getChartData() {
         dataType: 'json',
         async: false,
         success: function(data) {
-            chartData = {"date":[],"inbound":[],"outbound":[],"count":[],"inbound_diff":[],"outbound_diff":[],"count_diff":[]};
-            tableData = {"sort":[],"raw":[]};
+            let tmpChartData = [];
+            let chartData = {"inbound":[],"outbound":[],"count":[]};
+            let tableData = [];
             for(let server in data){
-                let calcData = calcServerGlobalTraffic(data[server]);
-                chartData = calcData[0];
-                /*for(let idx in calcData[0]){
-                    let tick = calcData[0][idx];
-                    chartData.inbound.push([time,tick.inbound]);
-                    chartData.outbound.push([time,tick.outbound]);
-                    chartData.count.push([time,tick.count]);
-                }*/
+                if(data[server] != null){
+                    let calcData = calcServerGlobalTraffic(data[server]);
+                    for(let idx in calcData.chart){
+                        let tick = calcData.chart[idx];
+                        if(typeof(tmpChartData[tick.time]) == "undefined"){
+                            tmpChartData[tick.time] = tick;
+                        } else {
+                            tmpChartData[tick.time].inbound += tick.inbound;
+                            tmpChartData[tick.time].outbound += tick.outbound;
+                            tmpChartData[tick.time].count += tick.count;
+                        }
+                    }
+                    console.log(tmpChartData);
+                    tableData.concat(calcData.table);
+                }
             }
-            console.log(chartData);
+            for(let idx in tmpChartData){
+                let tick = tmpChartData[idx];
+                chartData.inbound.push([tick.time,tick.inbound]);
+                chartData.outbound.push([tick.time,tick.outbound]);
+                chartData.count.push([tick.time,tick.count]);
+            }
+
             /*chartCalcData = {"inbound":[],"outbound":[],"count":[],"inbound_diff":[],"outbound_diff":[],"count_diff":[]};
             for(let idx in chartData.date){
                 let time = chartData.date[idx];
@@ -58,31 +72,31 @@ function getChartData() {
                 chartCalcData.count.push(count);
             }*/
             genChart(chartData);
+            console.log(tableData);
             genTopTable(tableData);
         }
     });
 }
 
 function calcServerGlobalTraffic(data){
-    chartData = {"date":[],"inbound":[],"outbound":[],"count":[],"inbound_diff":[],"outbound_diff":[],"count_diff":[]};
-    tableData = {"sort":[],"raw":[]};
+    chartData = [];
+    tableData = [];
     for(let idx in data){
         let tick = data[idx];
         let date = new Date(tick.time);
-        tableData.raw.push({"date":tick.time,"time":date.getTime(),"data":tick});
-        let time = date.getTime();
-        chartData.inbound.push([time,tick.traffic.inbound]);
-        chartData.outbound.push([time,tick.traffic.outbound]);
-        chartData.count.push([time,tick.traffic.count]);
+        let time = parseInt(date.getTime()/1000) * 1000;//去整數
+        tableData.push({"date":tick.time,"time":time,"data":tick});
+        let chartTick = {"time":time,"inbound":tick.traffic.inbound,"outbound":tick.traffic.outbound,"count":tick.traffic.count};
+        chartData.push(chartTick);
     }
-    return [chartData,tableData];
+    return {"chart":chartData,"table":tableData};
 }
 
 function genTopTable(tableData) {
     //tableData.sort.sort(function(a, b){return (a.inbound>b.inbound)?1:(a.inbound==b.inbound)?-1:0});
     let tableView = '<table id="topTable" class="table"><thead><tr><th>Host/IP</th><th>Inbound</th><th>Outbound</th><th>Count</th></tr></thead><tbody>';
-    for(let idx in tableData.sort){
-        let host = tableData.sort[idx];
+    for(let idx in tableData){
+        let host = tableData[idx];
         tableView += '<tr><td>'+idx+'</td><td>'+host.inbound+'</td><td>'+host.outbound+'</td><td>'+host.count+'</td></tr>';
     }
     tableView += '</tbody></table>';

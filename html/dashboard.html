@@ -18,24 +18,21 @@
      let token = getCookie("token");
      if(token != ""){
          let user = getCookie("user");
+         if(user == ""){
+             document.cookie = "";
+             window.location.assign("index.html");
+         }
          User.account = user;
          User.token = token;
          showManagementView();
      } else {
-         $("#login").show();
+         document.cookie = "";
+         window.location.assign("index.html");
      }
-    });
+});
 
     </script>
     <body>
-        <div id="login" style="display: none;width:40%;margin-left: auto;margin-right: auto;margin-top: 10%;">
-            <table class="table table-bordered">
-                <tr><th colspan="2">Login To TAPA</th></tr>
-                <tr><td>User</td><td><input type="text" name="user" id="user" size="20"></td></tr>
-                <tr><td>Password</td><td><input type="password" name="pwd" id="pwd" size="20"></td></tr>
-                <tr><td colspan="2"><button onclick="login();" class="btn btn-success" style="width:100%;">Login</button></td></tr>
-            </table>
-        </div>
         <div id="view" style="width:100%;margin-top: 10%;display:none;"></div>
     </body>
 </html>

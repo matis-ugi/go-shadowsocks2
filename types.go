@@ -72,3 +72,8 @@ type DBTrafficList struct {
 	Time        time.Time          `json:"time" bson:"time"`
 	TrafficList map[string]Traffic `json:"traffic" bson:"traffic"`
 }
+
+type UserSession struct {
+	User  User
+	Token string `json:"token"`
+}
